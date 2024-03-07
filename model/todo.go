@@ -13,22 +13,40 @@ type (
 	}
 
 	// A CreateTODORequest expresses ...
-	CreateTODORequest struct{}
+	CreateTODORequest struct {
+		Subject     string `json:"subject"`
+		Description string `json:"description"`
+	}
 	// A CreateTODOResponse expresses ...
-	CreateTODOResponse struct{}
+	CreateTODOResponse struct {
+		TODO TODO `json:"todo"`
+	}
 
 	// A ReadTODORequest expresses ...
-	ReadTODORequest struct{}
+	ReadTODORequest struct {
+		PrevID int64 `json:"prev_id"`
+		Size   int64 `default:"5" json:"size"`
+	}
 	// A ReadTODOResponse expresses ...
-	ReadTODOResponse struct{}
+	ReadTODOResponse struct {
+		TODOs []TODO `json"todos"`
+	}
 
 	// A UpdateTODORequest expresses ...
-	UpdateTODORequest struct{}
+	UpdateTODORequest struct {
+		ID          int    `json:"id"`
+		Subject     string `json:"subject"`
+		Description string `json:"description"`
+	}
 	// A UpdateTODOResponse expresses ...
-	UpdateTODOResponse struct{}
+	UpdateTODOResponse struct {
+		TODO TODO `json:"todo"`
+	}
 
 	// A DeleteTODORequest expresses ...
-	DeleteTODORequest struct{}
+	DeleteTODORequest struct {
+		Ids []int `json:"ids"`
+	}
 	// A DeleteTODOResponse expresses ...
 	DeleteTODOResponse struct{}
 )
