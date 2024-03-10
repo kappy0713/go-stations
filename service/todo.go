@@ -43,7 +43,7 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	}
 
 	todo := &model.TODO{}
-	todo.ID = int(id)                             // 取得したIDを新しいTODOに格納(sta09でこの部分が引っかかった)
+	todo.ID = id                                  // 取得したIDを新しいTODOに格納(sta09でこの部分が引っかかった)
 	row := s.db.QueryRowContext(ctx, confirm, id) // 取得したIDを元にTODOを取得
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
@@ -75,7 +75,7 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 	}
 	defer stmt.Close()
 
-	result, err := stmt.ExecContext(ctx, subject, description)
+	result, err := stmt.ExecContext(ctx, subject, description, id) // updateの順に
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,9 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 		return nil, err
 	}
 
-	todo := &model.TODO{}
+	todo := &model.TODO{
+		ID: id,
+	}
 	row := s.db.QueryRowContext(ctx, confirm, id)
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
