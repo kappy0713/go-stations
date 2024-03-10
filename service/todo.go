@@ -36,12 +36,13 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	if err != nil {
 		return nil, err
 	}
+
 	id, err := result.LastInsertId() // resultからIDを取得
 	if err != nil {
 		return nil, err
 	}
 
-	todo := new(model.TODO)
+	todo := &model.TODO{}
 	todo.ID = int(id)                             // 取得したIDを新しいTODOに格納(sta09でこの部分が引っかかった)
 	row := s.db.QueryRowContext(ctx, confirm, id) // 取得したIDを元にTODOを取得
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
@@ -68,8 +69,33 @@ func (s *TODOService) UpdateTODO(ctx context.Context, id int64, subject, descrip
 		update  = `UPDATE todos SET subject = ?, description = ? WHERE id = ?`
 		confirm = `SELECT subject, description, created_at, updated_at FROM todos WHERE id = ?`
 	)
+	stmt, err := s.db.PrepareContext(ctx, update)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
 
-	return nil, nil
+	result, err := stmt.ExecContext(ctx, subject, description)
+	if err != nil {
+		return nil, err
+	}
+
+	num, err := result.RowsAffected() // RowsAffectedで変更した行数(row)を取得
+	if num == 0 {
+		return nil, &model.ErrNotFound{}
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	todo := &model.TODO{}
+	row := s.db.QueryRowContext(ctx, confirm, id)
+	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return todo, nil
 }
 
 // DeleteTODO deletes TODOs on DB by ids.
