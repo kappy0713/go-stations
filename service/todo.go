@@ -26,11 +26,6 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 		confirm = `SELECT subject, description, created_at, updated_at FROM todos WHERE id = ?`
 	)
 
-	todo := model.TODO{
-		Subject:     subject,
-		Description: description,
-	}
-
 	stmt, err := s.db.PrepareContext(ctx, insert) // SQLステートメントを準備
 	if err != nil {
 		return nil, err
@@ -44,16 +39,17 @@ func (s *TODOService) CreateTODO(ctx context.Context, subject, description strin
 	id, err := result.LastInsertId() // resultからIDを取得
 	if err != nil {
 		return nil, err
-
 	}
 
+	todo := new(model.TODO)
+	todo.ID = int(id)                             // 取得したIDを新しいTODOに格納(sta09でこの部分が引っかかった)
 	row := s.db.QueryRowContext(ctx, confirm, id) // 取得したIDを元にTODOを取得
 	err = row.Scan(&todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
 		return nil, err // Goの慣習
 	}
 
-	return &todo, nil // TODOを返す
+	return todo, nil // TODOを返す
 }
 
 // ReadTODO reads TODOs on DB.

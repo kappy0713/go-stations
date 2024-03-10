@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"log"
+	"net/http"
 
 	"github.com/TechBowl-japan/go-stations/model"
 	"github.com/TechBowl-japan/go-stations/service"
@@ -10,6 +13,32 @@ import (
 // A TODOHandler implements handling REST endpoints.
 type TODOHandler struct {
 	svc *service.TODOService
+}
+
+// ServeHTTP implements http.Handler.
+func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		req := &model.CreateTODORequest{}
+
+		deq := json.NewDecoder(r.Body)
+		if err := deq.Decode(req); err != nil { // Decodeはアドレスを渡す必要がある
+			log.Println(err)
+		}
+
+		if req.Subject == "" { //Subjectが空でないか判定, 空なら400を返す
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		res, err := h.Create(r.Context(), req)
+		if err != nil {
+			log.Println(err)
+		}
+
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Println(err)
+		}
+		return
+	}
 }
 
 // NewTODOHandler returns TODOHandler based http.Handler.
@@ -21,8 +50,8 @@ func NewTODOHandler(svc *service.TODOService) *TODOHandler {
 
 // Create handles the endpoint that creates the TODO.
 func (h *TODOHandler) Create(ctx context.Context, req *model.CreateTODORequest) (*model.CreateTODOResponse, error) {
-	_, _ = h.svc.CreateTODO(ctx, "", "")
-	return &model.CreateTODOResponse{}, nil
+	todo, err := h.svc.CreateTODO(ctx, req.Subject, req.Description)
+	return &model.CreateTODOResponse{TODO: *todo}, err
 }
 
 // Read handles the endpoint that reads the TODOs.
