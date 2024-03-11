@@ -59,8 +59,42 @@ func (s *TODOService) ReadTODO(ctx context.Context, prevID, size int64) ([]*mode
 		read       = `SELECT id, subject, description, created_at, updated_at FROM todos ORDER BY id DESC LIMIT ?`
 		readWithID = `SELECT id, subject, description, created_at, updated_at FROM todos WHERE id < ? ORDER BY id DESC LIMIT ?`
 	)
+	// PrevID が指定されているかどうかで、定義されている Query を使い分けましょう。
+	// 場合分けする必要があるかも。初期値が0だから、指定されていれば0以外の値になっているはず。
+	// PrevIDが0かそうでないかで場合分け
+	todos := []*model.TODO{} // 空のスライス
 
-	return nil, nil
+	if prevID == 0 {
+		rows, err := s.db.QueryContext(ctx, read, size)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() { // 次の行があればtrue, なければfalse
+			var todo model.TODO
+			if err := rows.Scan(&todo.ID, &todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt); err != nil {
+				return nil, err
+			}
+			todos = append(todos, &todo)
+		}
+	} else {
+		rows, err := s.db.QueryContext(ctx, readWithID, prevID, size)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var todo model.TODO
+			if err := rows.Scan(&todo.ID, &todo.Subject, &todo.Description, &todo.CreatedAt, &todo.UpdatedAt); err != nil {
+				return nil, err
+			}
+			todos = append(todos, &todo)
+		}
+	}
+
+	return todos, nil
 }
 
 // UpdateTODO updates the TODO on DB.
