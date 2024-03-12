@@ -92,6 +92,28 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 		}
 		return
+	case "DELETE":
+		req := &model.DeleteTODORequest{}
+
+		deq := json.NewDecoder(r.Body)
+		if err := deq.Decode(req); err != nil {
+			log.Println(err)
+		}
+		if len(req.IDs) == 0 {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+
+		res, err := h.Delete(r.Context(), req)
+		if err != nil {
+			http.Error(w, "Not Found", http.StatusNotFound)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Println(err)
+		}
+		return
 	}
 }
 
@@ -122,6 +144,10 @@ func (h *TODOHandler) Update(ctx context.Context, req *model.UpdateTODORequest) 
 
 // Delete handles the endpoint that deletes the TODOs.
 func (h *TODOHandler) Delete(ctx context.Context, req *model.DeleteTODORequest) (*model.DeleteTODOResponse, error) {
-	_ = h.svc.DeleteTODO(ctx, nil)
-	return &model.DeleteTODOResponse{}, nil
+	ids := make([]int64, len(req.IDs))
+	for i, id := range req.IDs {
+		ids[i] = int64(id)
+	}
+	err := h.svc.DeleteTODO(ctx, ids)
+	return &model.DeleteTODOResponse{}, err
 }
